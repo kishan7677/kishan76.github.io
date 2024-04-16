@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>QR Scanner</title>
+  <style>
+    /* Add any necessary CSS styles here */
+  </style>
+</head>
+<body>
+  <video id="qr-video" width="100%" height="100%" autoplay muted></video>
+  <script src="https://cdn.jsdelivr.net/npm/jsQR@2.0.0/build/jsQR.js"></script>
+  <script>
+    const video = document.getElementById('qr-video');
+
+    function startCamera() {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(function (stream) {
+          video.srcObject = stream;
+        })
+        .catch(function (error) {
+          console.error('Error accessing camera:', error);
+        });
+    }
+
+    function stopCamera() {
+      const stream = video.srcObject;
+      const tracks = stream.getTracks();
+
+      tracks.forEach(function(track) {
+        track.stop();
+      });
+
+      video.srcObject = null;
+    }
+
+    function scanQRCode() {
+      const canvasElement = document.createElement('canvas');
+      const canvas = canvasElement.getContext('2d');
+
+      canvasElement.width = video.videoWidth;
+      canvasElement.height = video.videoHeight;
+      canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+      
+      const imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+      const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+      if (code) {
+        return code.data;
+      } else {
+        return null;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      startCamera();
+    });
+
+    // Send scanned QR code data to Flutter
+    function sendScannedDataToFlutter(data) {
+      window.flutter_inappwebview.callHandler('scannedData', data);
+    }
+  </script>
+</body>
+</html>
